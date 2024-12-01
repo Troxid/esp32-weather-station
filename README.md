@@ -23,7 +23,7 @@
 
 ## Экран и МК отдельно
 
-![devkit1](_assets/devkit1.jpeg)
+![devkit1](_assets/devkit1_1.jpeg)
 
 > **Warning**  
 > Экран и девкит может поставляться с незапаянными штырьковыми разъемами! Может потребоваться пайка
@@ -40,7 +40,7 @@
 
 ## МК вместе с экраном на плате
 
-![devkit1](_assets/devkit2.jpeg)
+![devkit1](_assets/devkit2_1.jpeg)
 
 В этом комплекте ничего паять и подключать между собой не нужно т.к. все располагается на одной плате.
 
@@ -274,7 +274,7 @@ fn main() {
 Компилируем и прошиваем `cargo run --release`.  
 На дисплее должен отрисоваться прямоугольник.
 
-![screen_step1](_assets/step1.jpeg)
+![screen_step1](_assets/step1_1.jpeg)
 
 
 # Разработка UI
@@ -378,3 +378,77 @@ let _ = Text::with_text_style(
 
 https://open-meteo.com/en/docs
 https://docs.espressif.com/projects/arduino-esp32/en/latest/api/i2c.html
+
+
+# Draft
+
+ 
+nightly or stable?
+
+> переходим в директорию где будет храниться проект
+переходим в директорию где будут храниться проекты
+
+
+# cargo-espflash
+https://github.com/esp-rs/espflash/blob/main/espflash/README.md#permissions-on-linux
+```
+apt-get install libudev-dev
+cargo install cargo-espflash
+cargo install espflash
+```
+
+
+
+```
+[2024-12-01T13:25:22Z INFO ] Serial port: '/dev/ttyUSB0'
+[2024-12-01T13:25:22Z INFO ] Connecting...
+Error: espflash::serial_error
+
+  × Failed to open serial port /dev/ttyUSB0
+  ├─▶ Error while connecting to device
+  ├─▶ IO error while using serial port: Permission denied
+  ╰─▶ Permission denied
+```
+```
+sudo usermod -a -G tty $USER
+sudo usermod -a -G dialout $USER
+```
+
+
+# esp-idf install
+https://github.com/esp-rs/esp-idf-template#prerequisites
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html#step-1-install-prerequisites
+
+
+```
+cargo install ldproxy
+
+```
+
+https://github.com/esp-rs/espup
+```
+cargo install espup
+
+espup install
+. $HOME/export-esp.sh
+```
+
+
+ошибка
+```
+error: failed to run custom build command for `esp-idf-sys v0.35.0`
+Error: Could not install esp-idf
+  Cloning into '/home/troxid/TmpProjects/esp32-weather-station-test1/.embuild/espressif/esp-idf/v5.2.2'...
+  error: RPC failed; curl 92 HTTP/2 stream 0 was not closed cleanly: CANCEL (err 8)
+  error: 610 bytes of body are still expected
+  fetch-pack: unexpected disconnect while reading sideband packet
+  fatal: early EOF
+  fatal: fetch-pack: invalid index-pack output
+  Error: Could not install esp-idf
+
+  Caused by:
+      command '"git" "clone" "--jobs=8" "--recursive" "--depth" "1" "--shallow-submodules" "--branch" "v5.2.2" "https://github.com/espressif/esp-idf.git" "/home/troxid/TmpProjects/esp32-weather-station-test1/.embuild/espressif/esp-idf/v5.2.2"' exited with non-zero status code 128
+```
+https://stackoverflow.com/questions/21277806/fatal-early-eof-fatal-index-pack-failed
+
+git config --global core.compression 9 repack

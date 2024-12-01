@@ -20,8 +20,11 @@ use embedded_graphics::text::{Alignment, Baseline, Text, TextStyleBuilder};
 
 use embedded_layout::align::{horizontal, vertical, Align};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
+use esp_idf_svc::hal::delay::FreeRtos;
 use esp_idf_svc::hal::i2c::*;
 use esp_idf_svc::hal::prelude::*;
+use embedded_svc::utils::io::try_read_full;
+
 
 use esp_idf_svc::hal::task::thread::ThreadSpawnConfiguration;
 use esp_idf_svc::http::client::EspHttpConnection;
@@ -82,6 +85,7 @@ fn main() {
             conf.timeout = Some(Duration::from_secs(30));
             let api_url = "https://api.open-meteo.com/v1/forecast?latitude=55.7522&longitude=37.6156&current=temperature_2m&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timeformat=unixtime&timezone=Europe%2FMoscow&forecast_days=1";
             loop {
+                FreeRtos::delay_ms(1_000);
                 thread::sleep(Duration::from_millis(1_000));
                 let is_wifi_connected = wifi.is_connected().unwrap_or(false);
                 if !is_wifi_connected {
@@ -97,10 +101,12 @@ fn main() {
                             let request = client.request(Method::Get, api_url, headers)?;
                             let mut response = request.submit()?;
                             let mut buff = [0u8; 2048];
-                            response.read(&mut buff)?;
-                            let mut v = buff.to_vec();
-                            v.retain(|ch| *ch != b'\0');
-                            let res = serde_json::from_slice::<OpenMeteoResponse>(v.as_ref())?;
+                            // response.read(&mut buff)?;
+                            // let mut v = buff.to_vec();
+                            // v.retain(|ch| *ch != b'\0');
+                            // let res = serde_json::from_slice::<OpenMeteoResponse>(v.as_ref())?;
+                            let bytes_read = try_read_full(&mut response, &mut buff).map_err(|e| e.0)?;
+                            let res = serde_json::from_slice::<OpenMeteoResponse>(&buff[0..bytes_read])?;
                             info.temperature_cur = res.current.temperature_2m as i8;
                             info.temperature_min = *res.daily.temperature_2m_min.first().context("wrong min")? as i8;
                             info.temperature_max = *res.daily.temperature_2m_max.first().context("wrong max")? as i8;
