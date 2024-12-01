@@ -49,13 +49,13 @@
 
 # Настройка окружения
 
-1) Установка rust: 
+## 1 Установка rust 
 
 ```
 https://rustup.rs
 ```
 
-2) Установка IDE: 
+## Установка IDE: 
 
 Устанавливаем vscode для своей операционной системы
 ```
@@ -68,19 +68,52 @@ https://code.visualstudio.com/docs/languages/rust
 ```
 
 
-3) Установка esp32 SDK
+## Установка ESP32 SDK для Rust
+Для компиляции и прошивки микроконтроллера необходимо установить ряд дополнительных утилит:  
+*espflash* - работа с flash памятью и прошивка микроконтроллера
+*ldproxy* - утилита для перенаправления аргументов линковщика (не используется пользователем напрямую).  
+*espup* - утилита для установки тулчеинов (Xtensa Rust toolchain)  
+*esp-idf* - Содержит API (библиотеки и исходный код) для доступа к перефирии МК + скрипты для работы с тулчеином.
+
+Установка данных утилит выполняется один раз и используется для всех последующих проектов.  
+При сборке проекта будет использоваться обычная команда `cargo run --release` и в большинстве случаев, ручной вызов этих утилит не требуется.
+
+### ldproxy
 
 ```
-https://github.com/esp-rs/espflash/tree/main/cargo-espflash
+cargo install ldproxy
 ```
 
-4) Установка драйверов
+### espflash
+[репозиторий + документация](https://github.com/esp-rs/espflash/blob/main/espflash/README.md)
 
-проверка
+На linux машинах может потребоваться установка доп. пакета:
 ```
-cargo --version  
+apt-get install libudev-dev
 ```
 
+```
+cargo install cargo-espflash
+cargo install espflash
+```
+
+### espup 
+https://github.com/esp-rs/espup
+```
+cargo install espup
+espup install
+
+. $HOME/export-esp.sh
+```
+
+### esp-idf
+https://github.com/esp-rs/esp-idf-template#prerequisites
+
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html#step-1-install-prerequisites
+
+
+```
+```
 
 # Создание проекта
 
@@ -109,8 +142,6 @@ Configure advanced template options?: false
 
 ```shell
 cd esp32-weather-station
-
-cargo build
 ```
 
 Командой `ls -la` посмотрим на структуру проекта, которую сгенирировал `cargo-generate`. 
@@ -154,12 +185,14 @@ fn main() {
 cargo run --release
 ```
 
+Первая сборка проекта может происходить дольше обычного т.к. скачиваются необходимые тулчеины. 
+
 Что бы иметь возможность прошить и читать читать логи, необходимо выбрать последовательный (serial) порт, к которому подключен МК. Примерное описание такого порта:
 ```
 ❯ /dev/cu.usbserial-0001 - CP2102 USB to UART Bridge Controller
 ```
 
-После прошивки в логах будет примерной такой текст:
+После прошивки в логах будет примерно такие логи:
 ```
  (31) boot: ESP-IDF v5.1-beta1-378-gea5e0ff298-dirt 2nd stage bootloader
 I (31) boot: compile time Jun  7 2023 07:48:23
@@ -181,6 +214,30 @@ I (398) main_task: Returned from app_main()
 ```
 
 Что свидетельствует об удачной прошивке и работе МК.
+
+Если при выборе последовательного порта произошел запрет доступа (`Permission denied`): 
+
+```
+[2024-12-01T13:25:22Z INFO ] Serial port: '/dev/ttyUSB0'
+[2024-12-01T13:25:22Z INFO ] Connecting...
+Error: espflash::serial_error
+
+  × Failed to open serial port /dev/ttyUSB0
+  ├─▶ Error while connecting to device
+  ├─▶ IO error while using serial port: Permission denied
+  ╰─▶ Permission denied
+```
+
+то необходимо выдать пользователю права на `tty` и `dialout`:
+
+```
+sudo usermod -a -G tty $USER
+sudo usermod -a -G dialout $USER
+```
+
+и перезапустить компьютер
+
+
 
 
 # Разработка
@@ -379,6 +436,9 @@ let _ = Text::with_text_style(
 https://open-meteo.com/en/docs
 https://docs.espressif.com/projects/arduino-esp32/en/latest/api/i2c.html
 
+книга "The Rust on ESP Book" 
+https://docs.esp-rs.org/book/introduction.html
+
 
 # Draft
 
@@ -389,49 +449,7 @@ nightly or stable?
 переходим в директорию где будут храниться проекты
 
 
-# cargo-espflash
-https://github.com/esp-rs/espflash/blob/main/espflash/README.md#permissions-on-linux
-```
-apt-get install libudev-dev
-cargo install cargo-espflash
-cargo install espflash
-```
 
-
-
-```
-[2024-12-01T13:25:22Z INFO ] Serial port: '/dev/ttyUSB0'
-[2024-12-01T13:25:22Z INFO ] Connecting...
-Error: espflash::serial_error
-
-  × Failed to open serial port /dev/ttyUSB0
-  ├─▶ Error while connecting to device
-  ├─▶ IO error while using serial port: Permission denied
-  ╰─▶ Permission denied
-```
-```
-sudo usermod -a -G tty $USER
-sudo usermod -a -G dialout $USER
-```
-
-
-# esp-idf install
-https://github.com/esp-rs/esp-idf-template#prerequisites
-https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html#step-1-install-prerequisites
-
-
-```
-cargo install ldproxy
-
-```
-
-https://github.com/esp-rs/espup
-```
-cargo install espup
-
-espup install
-. $HOME/export-esp.sh
-```
 
 
 ошибка
