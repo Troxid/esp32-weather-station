@@ -69,6 +69,7 @@ https://code.visualstudio.com/docs/languages/rust
 
 
 ## Установка ESP32 SDK для Rust
+[полная инструкция](https://github.com/esp-rs/esp-idf-template#prerequisites)  
 Для компиляции и прошивки микроконтроллера необходимо установить ряд дополнительных утилит:  
 *espflash* - работа с flash памятью и прошивка микроконтроллера
 *ldproxy* - утилита для перенаправления аргументов линковщика (не используется пользователем напрямую).  
@@ -77,6 +78,22 @@ https://code.visualstudio.com/docs/languages/rust
 
 Установка данных утилит выполняется один раз и используется для всех последующих проектов.  
 При сборке проекта будет использоваться обычная команда `cargo run --release` и в большинстве случаев, ручной вызов этих утилит не требуется.
+
+
+### esp-idf 
+
+Необходимо установить **только** дополнительные пакеты для своей ОС (команды `sudo apt-get install`, `brew install` и тд).  
+Выполняется **только шаг 1** "Step 1. Install Prerequisites".  
+Шаги "Step 2. Get ESP-IDF" и "Step 3. Set up the Tools" выполнять **не нужно**.   
+
+[Step 1. Install Prerequisites](
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html#step-1-install-prerequisites)
+
+Для linux машин: 
+
+```
+sudo apt-get install git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+```
 
 ### ldproxy
 
@@ -87,11 +104,11 @@ cargo install ldproxy
 ### espflash
 [репозиторий + документация](https://github.com/esp-rs/espflash/blob/main/espflash/README.md)
 
-На linux машинах может потребоваться установка доп. пакета:
+На linux машинах может потребоваться установка дополнительного пакета:
 ```
 apt-get install libudev-dev
 ```
-
+далее для всех ОС: 
 ```
 cargo install cargo-espflash
 cargo install espflash
@@ -106,13 +123,9 @@ espup install
 . $HOME/export-esp.sh
 ```
 
-### esp-idf
-https://github.com/esp-rs/esp-idf-template#prerequisites
-
-https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html#step-1-install-prerequisites
-
-
+Скрипт `export-esp.sh` необходимо выполнять каждый раз при открытии нового терминала из которого планируется сборка проекта 
 ```
+. $HOME/export-esp.sh
 ```
 
 # Создание проекта
