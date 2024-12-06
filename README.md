@@ -197,17 +197,20 @@ code esp32-weather-station
 `sdkconfig.defaults` - настройки конфигурации SDK Espressif  
 `.cargo/config.toml` - локальная конфигурация cargo для компиляции
 
+## Решение проблемы длинных путей (только для машин на windows)
 Для windows машин необходимо добавить в файле `.cargo/config.toml` в таблицу `[env]`:
 ```toml
 [env]
 ESP_IDF_PATH_ISSUES = 'warn'
 ```
-для игнорирования ошибок связанных с длинными путями файлов.
+для игнорирования ошибок связанных с длинными путями файлов.  
 
+## Решение проблемы ограничений скорости github
 В последнее время, наблюдаются проблемы при скачивании с github.  
-При первой сборке проекта, `cargo` попытается командой `git clone` скачать `ESP-IDF`, но упадет с ошибкой `error: RPC failed; curl 92 HTTP/2 stream 0 was not closed cleanly: CANCEL (err 8)` по таймауту из-за медленной скорости скачивания.  
-Необходимо либо указать пользовательский токена github либо зеркало репозитория, где ограничений на скачивания нет:  
+При первой сборке проекта, `cargo` попытается командой `git clone` скачать `ESP-IDF`, но упадет с ошибкой `error: RPC failed; curl 92 HTTP/2 stream 0 was not closed cleanly: CANCEL (err 8)` по таймауту из-за медленной скорости скачивания.   
+Необходимо либо указать пользовательский токена github, либо зеркало репозитория, где ограничений на скачивания нет:  
 
+### Зеркало gitflic
 Как временное решение, можно воспользоваться зеркалом репозитория c gitflic (российский аналог github).
 Добавим в файле `.cargo/config.toml` в таблице `[env]`, настройку репозитория:
 ```toml
@@ -215,6 +218,7 @@ ESP_IDF_PATH_ISSUES = 'warn'
 ESP_IDF_REPOSITORY = "https://gitflic.ru/project/troxid/esp-idf-mirror.git"
 ```
 
+### Персональный токен github
 Если вы планируете продолжать работать с проектом, то крайне рекомендуется завести свой, персональный github токен.   
 Это можно сделать в своем профиле github `Developer Settings > Personal access Tokens > Fine grained tokens > Generate token`.   
 Достаточно будет создать только на чтение, без дополнительных прав.  
@@ -223,6 +227,7 @@ ESP_IDF_REPOSITORY = "https://gitflic.ru/project/troxid/esp-idf-mirror.git"
 ESP_IDF_REPOSITORY = "https://<TOKEN>@github.com/espressif/esp-idf.git"
 ```
 
+## Тестовая прошивка
 Откроем терминал в vscode, нажав `ctrl + shift + p` и введем `Create new terminal`.
 ![open_terminal](_assets/open_terminal.png)
 
@@ -301,9 +306,7 @@ sudo usermod -a -G dialout $USER
 и перезапустить компьютер
 
 
-
-
-# Разработка
+# Разработка графического проекта
 
 ## Подключаем библиотеки 
 
