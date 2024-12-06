@@ -75,14 +75,15 @@ https://code.visualstudio.com/docs/languages/rust
 
 ## Установка ESP32 SDK для Rust
 [полная инструкция](https://github.com/esp-rs/esp-idf-template#prerequisites)  
-Для компиляции и прошивки микроконтроллера необходимо установить ряд дополнительных утилит:  
-*espflash* - работа с flash памятью и прошивка микроконтроллера
+Для компиляции и прошивки микроконтроллеров на базе esp32 необходимо установить ряд дополнительных утилит:  
+*espflash* - работа с flash памятью и прошивка микроконтроллера  
 *ldproxy* - утилита для перенаправления аргументов линковщика (не используется пользователем напрямую).  
 *espup* - утилита для установки тулчеинов (Xtensa Rust toolchain)  
-*esp-idf* - Содержит API (библиотеки и исходный код) для доступа к перефирии МК + скрипты для работы с тулчеином.
+*esp-idf* - Содержит API (библиотеки и исходный код) для доступа к перефирии МК + скрипты для работы с тулчеином.  
+*cargo-generate* - создание rust проектов на базе репозиториев-шаблонов
 
 Установка данных утилит выполняется один раз и используется для всех последующих проектов.  
-При сборке проекта будет использоваться обычная команда `cargo run --release` и в большинстве случаев, ручной вызов этих утилит не требуется.
+При сборке проекта будет использоваться обычная команда `cargo run` и в большинстве случаев, ручной вызов этих утилит не требуется.
 
 
 ### esp-idf 
@@ -120,8 +121,9 @@ cargo install espflash
 ```
 
 ### espup 
+
 https://github.com/esp-rs/espup
-```
+```shell
 cargo install espup
 espup install
 
@@ -129,22 +131,29 @@ espup install
 ```
 
 Скрипт `export-esp.sh` необходимо выполнять каждый раз при открытии нового терминала из которого планируется сборка проекта 
-```
+```shell
 . $HOME/export-esp.sh
+```
+
+### cargo-generate
+
+```shell
+cargo install cargo-generate
 ```
 
 # Создание проекта
 
 Что бы  вручную не создавать и конфигурировать проект, можно воспользоваться утилитой `cargo-generate`. `cargo-generate` - создаст проект с нужными настройками на базе репозитория-шаблона
 
+Переходим в директорию где вы планируте хранить проекты 
+Это может быть любая директория, но Windows машинах желательно путь выбирать наиболее короткий (например `C:\Projects`)
 
 ```shell
-# устанавливаем cargo-generate
-cargo install cargo-generate
-
-# переходим в директорию где будет храниться проект 
 cd esp32-projects
+```
 
+Далее создаем проект на базе шаблона
+```shell
 # создаем проект на базе шаблона: https://github.com/esp-rs/esp-idf-template
 cargo generate esp-rs/esp-idf-template cargo
 ```
@@ -155,19 +164,25 @@ Project Name: esp32-weather-station
 Which MCU to target?: esp32
 Configure advanced template options?: false
 ```
+После завершения этой команды, в текущей рабочей директории будет создана директория проекта.  
+Директорию проекта надо открыть в IDE VisualCode или удобном для вас редакторе.
 
-Переходим в директорию проекта и проверяем собирается наш проект или нет. Команда `cargo build` только соберет проект не прошивая МК.
-
+Через графический интерфейс:
+![open_vs_code](_assets/open_vs_code.png)
+или через терминал 
 ```shell
-cd esp32-weather-station
+code esp32-weather-station
 ```
 
-Командой `ls -la` посмотрим на структуру проекта, которую сгенирировал `cargo-generate`. 
+
+
+
+В левой панели `Explorer` посмотрим на структуру проекта, которую сгенирировал `cargo-generate`. 
   
 ```
    -  .
    - ├──  .cargo
-     │  └──  config.toml
+     │  └──  config.toml       - 
    - ├──  .embuild
      ├──  build.rs
      ├──  Cargo.lock
@@ -181,9 +196,44 @@ cd esp32-weather-station
 
 Наиболее интересные файлы для нас это:  
 `src/main.rs` - исходный код прошивки МК  
-`Cargo.toml` - настройки проекта и библиотеки  
-`sdkconfig.defaults` - настройки конфигурации SDK Espressif   
+`Cargo.toml` - настройки проекта и используемые библиотеки  
+`sdkconfig.defaults` - настройки конфигурации SDK Espressif  
+`.cargo/config.toml` - локальная конфигурация cargo для компиляции
 
+Для windows машин необходимо добавить в файле `.cargo/config.toml` в таблицу `[env]`:
+```toml
+[env]
+ESP_IDF_PATH_ISSUES = 'warn'
+```
+для игнорирования ошибок связанных с длинными путями файлов.
+
+Так же, в последнее время, наблюдаются проблемы при скачивании с github.  
+При первой сборке проекта, `cargo` попытается командой `git clone` скачать `ESP-IDF`, но упадет с ошибкой `error: RPC failed; curl 92 HTTP/2 stream 0 was not closed cleanly: CANCEL (err 8)` по таймауту из-за медленной скорости скачивания.  
+При передаче пользовательского токена, github перестает ограничавать скорость скачивания.  
+Либо необходимо указать зеркало репозитория, где ограничений на скачивания нет:
+
+Если собственного токена нет, то как временное решение, при проведения мастер-класса, можно воспользоваться зеркалом репозитория c gitflic (российский аналог github).
+Добавим в файле `.cargo/config.toml` в таблице `[env]`, настройку репозитория:
+```toml
+[env]
+ESP_IDF_REPOSITORY = "https://gitflic.ru/project/troxid/esp-idf-mirror.git"
+```
+
+Если вы планируете продолжать работать с проектом, то крайне рекомендуется завести свой, персональный github токен.   
+Это можно сделать в своем профиле github `Developer Settings > Personal access Tokens > Fine grained tokens > Generate token`.   
+Достаточно будет создать только на чтение, без дополнительных прав.  
+```toml
+[env]
+ESP_IDF_REPOSITORY = "https://<TOKEN>@github.com/espressif/esp-idf.git"
+```
+
+Откроем терминал в vscode, нажав `ctrl + shift + p` и введем `Create new terminal`.
+![open_terminal](_assets/open_terminal.png)
+
+Откроется терминал, у которого текущая рабочая директория будет директорией проекта.  
+
+Введем в терминал `cargo build`.  
+`cargo build` - только соберет проект не прошивая МК.
 
 Проверим работу МК скомпилировав и отправив прошивку.  
 В `src/main.rs` уже находится необходимая прошивка:
@@ -198,14 +248,14 @@ fn main() {
 Встроенный логгер будет печатать всю информацию в serial.   
 
 
-`cargo run --release` - скомпилирует и прошьет МК. Ключ `--release` применяет оптимизацию . Это превентивно помагает избежать ошибок связанных с нехваткой памяти в стеке или куче.
+`cargo run --release` - скомпилирует и прошьет МК. Ключ `--release` применяет оптимизации. Это превентивно помагает избежать ошибок связанных с нехваткой памяти в стеке или куче.
 ```
 cargo run --release
 ```
 
 Первая сборка проекта может происходить дольше обычного т.к. скачиваются необходимые тулчеины. 
 
-Что бы иметь возможность прошить и читать читать логи, необходимо выбрать последовательный (serial) порт, к которому подключен МК. Примерное описание такого порта:
+Что бы иметь возможность прошить и читать логи, необходимо выбрать последовательный (serial) порт, к которому подключен МК. Примерное описание такого порта:
 ```
 ❯ /dev/cu.usbserial-0001 - CP2102 USB to UART Bridge Controller
 ```
@@ -458,33 +508,10 @@ https://docs.espressif.com/projects/arduino-esp32/en/latest/api/i2c.html
 https://docs.esp-rs.org/book/introduction.html
 
 
-# Draft
-
- 
-nightly or stable?
-
-> переходим в директорию где будет храниться проект
-переходим в директорию где будут храниться проекты
 
 
 
 
 
-ошибка
-```
-error: failed to run custom build command for `esp-idf-sys v0.35.0`
-Error: Could not install esp-idf
-  Cloning into '/home/troxid/TmpProjects/esp32-weather-station-test1/.embuild/espressif/esp-idf/v5.2.2'...
-  error: RPC failed; curl 92 HTTP/2 stream 0 was not closed cleanly: CANCEL (err 8)
-  error: 610 bytes of body are still expected
-  fetch-pack: unexpected disconnect while reading sideband packet
-  fatal: early EOF
-  fatal: fetch-pack: invalid index-pack output
-  Error: Could not install esp-idf
 
-  Caused by:
-      command '"git" "clone" "--jobs=8" "--recursive" "--depth" "1" "--shallow-submodules" "--branch" "v5.2.2" "https://github.com/espressif/esp-idf.git" "/home/troxid/TmpProjects/esp32-weather-station-test1/.embuild/espressif/esp-idf/v5.2.2"' exited with non-zero status code 128
-```
-https://stackoverflow.com/questions/21277806/fatal-early-eof-fatal-index-pack-failed
 
-git config --global core.compression 9 repack
