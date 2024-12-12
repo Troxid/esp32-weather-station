@@ -46,8 +46,23 @@
 
 [Devkit ESP32 + OLED SSD1306](https://www.ozon.ru/product/modul-esp32-s-oled-displeem-1564880460/?asb=PgnFzODZfTizrkdcvDZqZNNEV5%252BCMd23%252F6bvhsValaQ%253D&asb2=gliD0Zr4VXqWYXjIFnckd8Jth5iSS29j_IE9QG8ZCA2v7imw1e6HkU1YJUozNnDuqBbLOfhjWbvyZAQI19PmGA&avtc=1&avte=4&avts=1731359481&keywords=esp32+oled)
 
+# Учебные метериалы 
+
+Rust:  
+- [Перевод официальной книги "Язык программирования Rust" (RU)](https://doc.rust-lang.ru/book/title-page.html)  
+- [Перевод книги "Rust на примерах" (RU)](https://doc.rust-lang.ru/stable/rust-by-example/index.html)  
+- [Шпаргалка синтиаксиса (learn X in Y minutes)](https://learnxinyminutes.com/ru/rust/)  
+- [Реализация различных алгоритмов на Rust](https://the-algorithms.com/language/rust)
+
+Embedded Rust:  
+- [Книга "The Rust on ESP Book" ](https://docs.esp-rs.org/book/introduction.html)
+- [Примеры использования ESP-IDF. Базовая перифирия (GPIO, I2C, ADC и т.д.)](https://github.com/esp-rs/esp-idf-hal/tree/master/examples)  
+- [Примеры использования ESP-IDF. Сервисы (WiFi, BT, HTTP и т.д.)](https://github.com/esp-rs/esp-idf-svc/tree/master/examples)  
+- [Серия статей Rust+ESP32](https://blog.theembeddedrustacean.com/series/esp32c3-embedded-rust-hal)
 
 # Настройка окружения
+
+Для тех у кого уже установлен rust, можно перейти к шагу [3 Установка ESP32 SDK для Rust](README.MD#3-установка-esp32-sdk-для-rust)
 
 ## 1 Установка rust 
 
@@ -55,14 +70,21 @@
 ```
 https://rustup.rs
 ```
+
+Для Windows машин, необходимо выбрать опцию:
+```
+1) Quick install via the Visual Studio Community installer
+```
+
 После этого будут доступны следующие командные утилиты:  
-`cargo` - пакетный менеджер проектов на rust, запуск и сборка проектов.  
-`rustup` - утилита для обновления тулчеинов, версии компилятора rust, а так же переключение на stable, beta и nightly ветку компилятора.   
-`rustc` - компилятор rust (пользователем напрямую обычно не испольуется)  
+- `cargo` - пакетный менеджер проектов на rust, запуск и сборка проектов.  
+- `rustup` - утилита для обновления тулчеинов, версии компилятора rust, а так же переключение на stable, beta и nightly ветку компилятора.   
+- `rustc` - компилятор rust (пользователем напрямую обычно не используется)  
 
 ## 2 Установка IDE: 
 
-Устанавливаем vscode для своей операционной системы
+В этой инструкции будет использоваться редактор vscode.  
+Устанавливаем vscode для своей операционной системы:
 ```
 https://code.visualstudio.com
 ```
@@ -72,15 +94,19 @@ https://code.visualstudio.com
 https://code.visualstudio.com/docs/languages/rust
 ```
 
+Так же есть поддержка IDE Jetbrains и любых редкаторов, у которых есть поддержка LSP ([более подробно](https://rust-analyzer.github.io/manual.html)):  
+[RustRover(Jetbrains)](https://www.jetbrains.com/rust/)  
+[zed](https://zed.dev)  
+
 
 ## 3 Установка ESP32 SDK для Rust
 [полная инструкция](https://github.com/esp-rs/esp-idf-template#prerequisites)  
 Для компиляции и прошивки микроконтроллеров на базе esp32 необходимо установить ряд дополнительных утилит:  
-*espflash* - работа с flash памятью и прошивка микроконтроллера  
-*ldproxy* - утилита для перенаправления аргументов линковщика (не используется пользователем напрямую).  
-*espup* - утилита для установки тулчеинов (Xtensa Rust toolchain)  
-*esp-idf* - Содержит API (библиотеки и исходный код) для доступа к перефирии МК + скрипты для работы с тулчеином.  
-*cargo-generate* - создание rust проектов на базе репозиториев-шаблонов
+- `espflash` - работа с flash памятью и прошивка микроконтроллера  
+- `ldproxy` - утилита для перенаправления аргументов линковщика (не используется пользователем напрямую).    
+- `espup` - утилита для установки тулчеинов (Xtensa Rust toolchain)  
+- `esp-idf` - Содержит API (библиотеки и исходный код) для доступа к перефирии МК + скрипты для работы с тулчеином.  
+- `cargo-generate` - создание rust проектов на базе репозиториев-шаблонов
 
 Установка данных утилит выполняется один раз и используется для всех последующих проектов.  
 При сборке проекта будет использоваться обычная команда `cargo run` и в большинстве случаев, ручной вызов этих утилит не требуется.
@@ -96,10 +122,15 @@ https://code.visualstudio.com/docs/languages/rust
 https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html#step-1-install-prerequisites)
 
 Для linux машин: 
-
 ```
 sudo apt-get install git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 ```
+
+Для windows машин необходимо вручную поставить Git и Python: 
+- [Git](https://git-scm.com/downloads/win)
+- [Python](https://www.python.org/downloads/windows/)  
+
+И прописать их в переменную окружения `PATH` 
 
 ### ldproxy
 
@@ -121,18 +152,17 @@ cargo install espflash
 ```
 
 ### espup 
-
 https://github.com/esp-rs/espup
+
 ```shell
 cargo install espup
 espup install
-
-. $HOME/export-esp.sh
 ```
 
-Скрипт `export-esp.sh` необходимо выполнять каждый раз при открытии нового терминала из которого планируется сборка проекта 
-```shell
-. $HOME/export-esp.sh
+для windows машин необходимо устанавливать espup@0.11.0 (версия 0.11.0)  
+```sh
+cargo install espup@0.11.0
+espup install
 ```
 
 ### cargo-generate
@@ -233,6 +263,19 @@ ESP_IDF_REPOSITORY = "https://<TOKEN>@github.com/espressif/esp-idf.git"
 
 Откроется терминал, у которого текущая рабочая директория будет директорией проекта.  
 
+Выполним скрипт по импорту путей до rust тулчеинов:
+```shell
+. $HOME/export-esp.sh
+```
+
+Для windows машин, необходимо выбрать терминал PowerShell (желательно от имени Администратора), выполнить скрипт по импорту путей
+```powershell
+C:\Users\username\export-esp.ps1
+# Добавляем Git и Python в PATH окружения если не добавили на ранних этапах
+$env:Path += ";C:\Program Files\Git\cmd"
+$env:Path += ":C:\Users\username\AppData\Local\Programs\Python\Python313"
+```
+
 Введем в терминал `cargo build`.  
 `cargo build` - только соберет проект не прошивая МК.
 
@@ -317,27 +360,25 @@ sudo usermod -a -G dialout $USER
 log = { version = "0.4", default-features = false }
 esp-idf-svc = { version = "0.49", default-features = false }
 
-embedded-graphics = "0.8.1"  # рисование примитивов 
-embedded-layout = "0.4.1"    # б
-ssd1306 = "0.9.0"            # протокол работы с экраном 
-chrono = { version = "0.4.38", features = ["serde"] } # дата и время
-tinytga = "0.5.0"            # картинки в формате .tga
-serde = { version = "1.0.203", features = ["derive"] } # дерево для ser/deser
-serde_json = "1.0.120"       # 
+embedded-graphics = "0.8.1"  
+embedded-layout = "0.4.1"    
+ssd1306 = "0.9.0"            
+chrono = { version = "0.4.38", features = ["serde"] }
+tinytga = "0.5.0"            
+serde = { version = "1.0.203", features = ["derive"] }
+serde_json = "1.0.120"       
 embedded-svc = "0.28.0"
 anyhow = "1.0.82"
 ```
 
-`ssd1306` - протокол/драйвер для работы с экраном  
-`embedded-graphics`, `embedded-layout`, `tinytga` - библиотеки для программного рендеренга примитивных геометрических фигур? текста и картинок  
-`chrono` - работа с датой и временем  
-`serde`, `serde_json` - сериализация/десериализация стуктур для. Необходимо для коммуникации с метео сервисом.
+`ssd1306` - i2c протокол/драйвер для работы с экраном  
+`embedded-graphics`, `embedded-layout`, `tinytga` - Библиотеки для программного рендеренга примитивных геометрических фигур, текста и tga картинок  
+`chrono` - Работа с датой и временем  
+`serde`, `serde_json` - Сериализация/десериализация структур. Необходимо для коммуникации с метео сервисом.
 
 ## Подключение дисплея 
 
 ![screen](_assets/i2c_screen.png)
-
-
 
 > **Warning**  
 > Внимательно проверьте подключение пинов МК к дисплею. Неправильное подключение может сломать МК
@@ -362,33 +403,55 @@ use esp_idf_svc::hal::prelude::*;
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
 
-fn main() {
+fn main() { 
     esp_idf_svc::sys::link_patches();
     esp_idf_svc::log::EspLogger::initialize_default();
 
+    // Получение периферии (GPIO, I2C и т.д.) МК 
+    // `.unwrap()` в конце возвращаемого значения означает критическое завершение программы и перезагрузка МК в случае ошибки 
+    // для fail-fast или демострационных целей, достаточно вызывать `.unwrap()`
     let peripheral = Peripherals::take().unwrap();
 
+    // Создание конфигурации для i2c шины
     let i2c_config = I2cConfig::new().baudrate(400u32.kHz().into());
+
+    // Отдельные переменные под GPIO, которые подключены к экрану
+    // В случае необходимости - поменять на актуальные 
     let screen_sda = peripheral.pins.gpio5;
     let screen_scl = peripheral.pins.gpio4;
 
+    // Создание i2c шины
     let i2c = I2cDriver::new(peripheral.i2c0, screen_sda, screen_scl, &i2c_config).unwrap();
 
+    // Создание I2C интерфейса для "абстрактного" экрана с адресом 0x3C на шине
     let interface = I2CDisplayInterface::new_custom_address(i2c, 0x3C);
 
+    // Создание I2C интерфейса для конкретного экрана на базе контроллера SSD1306 с разрешением 128x64
+    // Режим кадрового буффера - все рисование осуществляется в память МК.
+    // Командой flush() - кадровый буффер целиком отправляется в экран
     let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
 
+    // Инициализация дисплея по I2C
     display.init().unwrap();
+
+    // Установка яркости экрана в максимальное значение
     display.set_brightness(Brightness::BRIGHTEST).unwrap();
 
+    // Создание переиспользуемого стиля для рисования фигур
+    // стиль with_stroke - рисование внешней обводки фигуры с заданным цветом и шириной 
+    // стиль with_fill - заливка фигуры заданным цветом 
     let style1 = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
+
     let rectangle = Rectangle::new(Point::new(20, 10), Size::new(20, 10));
 
     loop {
+        // Очистка кадрового буффера от предыдущего кадра
         display.clear_buffer();
+
         let _ = rectangle.draw_styled(&style1, &mut display);
 
+        // Отправка кадрового буффера по i2c в экран.
         display.flush().unwrap();
     }
 }
@@ -502,8 +565,7 @@ let _ = Text::with_text_style(
 https://open-meteo.com/en/docs
 https://docs.espressif.com/projects/arduino-esp32/en/latest/api/i2c.html
 
-книга "The Rust on ESP Book" 
-https://docs.esp-rs.org/book/introduction.html
+
 
 
 
