@@ -52,6 +52,7 @@ Rust:
 - [Перевод официальной книги "Язык программирования Rust" (RU)](https://doc.rust-lang.ru/book/title-page.html)  
 - [Перевод книги "Rust на примерах" (RU)](https://doc.rust-lang.ru/stable/rust-by-example/index.html)  
 - [Шпаргалка синтиаксиса (learn X in Y minutes)](https://learnxinyminutes.com/ru/rust/)  
+- [Интерактивный тур по языку](https://tourofrust.com/00_ru.html)
 - [Реализация различных алгоритмов на Rust](https://the-algorithms.com/language/rust)
 
 Embedded Rust:  
@@ -143,7 +144,7 @@ cargo install ldproxy
 
 На linux машинах может потребоваться установка дополнительного пакета:
 ```
-apt-get install libudev-dev
+apt-get install libudev-dev pkg-config
 ```
 далее для всех ОС: 
 ```
@@ -341,7 +342,7 @@ Error: espflash::serial_error
 
 то необходимо выдать пользователю права на `tty` и `dialout`:
 
-```
+```shell
 sudo usermod -a -G tty $USER
 sudo usermod -a -G dialout $USER
 ```

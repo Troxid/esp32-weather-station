@@ -1,5 +1,3 @@
-
-
 use embedded_graphics::pixelcolor::BinaryColor;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{PrimitiveStyle, Rectangle, StyledDrawable};
@@ -8,7 +6,6 @@ use esp_idf_svc::hal::i2c::*;
 use esp_idf_svc::hal::prelude::*;
 
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
-
 
 fn main() {
     esp_idf_svc::sys::link_patches();
@@ -40,5 +37,3 @@ fn main() {
         display.flush().unwrap();
     }
 }
-
-
