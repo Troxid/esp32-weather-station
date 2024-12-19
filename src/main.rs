@@ -72,7 +72,7 @@ fn main() {
     let sntp = EspSntp::new_default().unwrap();
 
     // ESP32 - двухядерный микроконтроллер.
-    // HTTP запросы будем в отдельном потоке который будет запущен на втором ядре
+    // HTTP запросы будут запускаться в отдельном потоке который будет запущен на втором ядре
     // Это необходимо что бы не занимать время первого ядра, которое используется для рендеринга.
     // Начиная с вызова этой конфигурации, все потоки будут запускаться на втором ядре.
     ThreadSpawnConfiguration {
@@ -227,15 +227,15 @@ fn main() {
     let style1 = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
     let style2 = PrimitiveStyle::with_fill(BinaryColor::On);
 
-    // счетчик для анимаций и подсчета кадром
+    // счетчик для анимаций и подсчета кадров
     let mut i: u16 = 0;
-    // Дельта между кадрами
+    // Дельта между кадрами (для счетчика кадров)
     let mut dt = Duration::from_millis(1);
     // Структура для состояния приложения
     let mut info = ApplicationState::default();
     let timezone = 3;
     loop {
-        // Что бы избежать RwLock Starvation читаем не каждый кадр, а каждый сотый 
+        // Что бы избежать RwLock Starvation читаем не каждый кадр, а каждый n-й 
         if i % 100 == 0 {
             if let Ok(new_info) = weather_info.try_read() {
                 info = new_info.clone();
@@ -434,8 +434,8 @@ fn main() {
     }
 }
 
-/// Структура состояние приложения
-/// ApplicationState::default() - состояние для отладки UI рендеринга
+// Структура состояние приложения
+// ApplicationState::default() - состояние для отладки UI рендеринга
 
 #[derive(Debug, Clone)]
 struct ApplicationState {
@@ -465,7 +465,7 @@ impl Default for ApplicationState {
     }
 }
 
-/// Структуры для десериализации http ответов с OpenMeteo
+// Структуры для десериализации http ответов с OpenMeteo
 
 #[derive(Debug, serde::Deserialize)]
 struct OpenMeteoResponse {

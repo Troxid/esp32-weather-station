@@ -579,6 +579,32 @@ for (ind, p) in info.rain_propability.iter().enumerate() {
 }
 ```
 
+# Прошивки 
+
+## Тест экрана
+[source: test_screen](example/test_screen.rs)
+```shell 
+cargo run --example test_screen --release        
+```
+
+## Время, дата и температура без HTTP запросов
+[source: test_screen](example/firmware_v1.rs)
+```shell 
+cargo run --example firmware_v1 --release        
+```
+
+## Время, дата и температура с HTTP запросами
+[source: test_screen](example/firmware_v2.rs)
+```shell 
+cargo run --example firmware_v2 --release        
+```
+
+## Полная прошивка c комментариями и объяснениями
+[source: main.rs](src/main.rs)
+```shell 
+cargo run --release        
+```
+
 # Полезные ссылки
 
 https://open-meteo.com/en/docs
