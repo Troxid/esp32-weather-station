@@ -46,7 +46,7 @@
 
 [Devkit ESP32 + OLED SSD1306](https://www.ozon.ru/product/modul-esp32-s-oled-displeem-1564880460/?asb=PgnFzODZfTizrkdcvDZqZNNEV5%252BCMd23%252F6bvhsValaQ%253D&asb2=gliD0Zr4VXqWYXjIFnckd8Jth5iSS29j_IE9QG8ZCA2v7imw1e6HkU1YJUozNnDuqBbLOfhjWbvyZAQI19PmGA&avtc=1&avte=4&avts=1731359481&keywords=esp32+oled)
 
-# Учебные метериалы 
+# Учебные метериалы и полезные ссылки
 
 Rust:  
 - [Перевод официальной книги "Язык программирования Rust" (RU)](https://doc.rust-lang.ru/book/title-page.html)  
@@ -60,7 +60,11 @@ Embedded Rust:
 - [Примеры использования ESP-IDF. Базовая перифирия (GPIO, I2C, ADC и т.д.)](https://github.com/esp-rs/esp-idf-hal/tree/master/examples)  
 - [Примеры использования ESP-IDF. Сервисы (WiFi, BT, HTTP и т.д.)](https://github.com/esp-rs/esp-idf-svc/tree/master/examples)  
 - [Серия статей Rust+ESP32](https://blog.theembeddedrustacean.com/series/esp32c3-embedded-rust-hal)
-- [Готовые библиотеки для периферии: Температурные датчики, акселерометры, дисплеи и т.д. ](https://github.com/rust-embedded/awesome-embedded-rust?tab=readme-ov-file#driver-crates)
+- [Список полезных репозиториев для Rust Ebmbedded (awesome-embedded-rust)](https://github.com/rust-embedded/awesome-embedded-rust)
+- [Сайт с готовыми драйверами для периферии (170+). Температурные датчики, акселерометры, дисплеи и т.д.](https://tweedegolf.github.io/drive-rs/)
+
+
+[Open Meteo](https://open-meteo.com/en/docs) - сервер погоды
 
 # Настройка окружения
 
@@ -605,10 +609,7 @@ cargo run --example firmware_v2 --release
 cargo run --release        
 ```
 
-# Полезные ссылки
 
-https://open-meteo.com/en/docs
-https://docs.espressif.com/projects/arduino-esp32/en/latest/api/i2c.html
 
 
 
