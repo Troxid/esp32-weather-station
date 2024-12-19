@@ -3,6 +3,7 @@
 
 use std::sync::RwLock;
 use std::time::{Duration, Instant};
+use std::thread;
 
 use anyhow::Context;
 use ascii::{FONT_4X6, FONT_7X13, FONT_9X15_BOLD};
@@ -28,22 +29,26 @@ use esp_idf_svc::wifi::{AuthMethod, ClientConfiguration, Configuration, EspWifi}
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 use tinytga::Tga;
 
-use std::thread;
-
+// Загрузка текстурного атласа (spritesheets) в flash память 
+// текстурный атлас содержит все иконки и изображения
 const SPRITE_SHEET_BYTES: &[u8] = include_bytes!("../assets/Sprite-0001.tga");
 
 fn main() {
     esp_idf_svc::sys::link_patches();
     esp_idf_svc::log::EspLogger::initialize_default();
 
+    // Получение периферии (GPIO, I2C и т.д.) МК 
+    // `.unwrap()` в конце возвращаемого значения означает критическое завершение программы и перезагрузка МК в случае ошибки 
+    // для fail-fast или демострационных целей, достаточно вызывать `.unwrap()`
     let peripheral = Peripherals::take().unwrap();
     let sys_loop = EspSystemEventLoop::take().unwrap();
     let _nvs_partition = EspDefaultNvsPartition::take().unwrap();
 
-    // WIFI INIT
+    // SSID и пароль подключаемой wifi точки
     let ssid = "********";
     let password = "********";
 
+    // создание wifi в режиме клиента
     let mut wifi = EspWifi::new(peripheral.modem, sys_loop.clone(), None).unwrap();
     wifi.set_configuration(&Configuration::Client(ClientConfiguration {
         ssid: ssid.try_into().unwrap(),
@@ -55,12 +60,21 @@ fn main() {
     }))
     .unwrap();
 
+    // запуск wifi перефирии без подключения к точке
     wifi.start().unwrap();
 
+    // подключение к wifi точке, ранее указанной в конфигурации
     wifi.connect().unwrap();
 
+    // Инициализация NTP клиента
+    // В фоновом режиме подключается к NTP серверам 
+    // и синхронизирует системное время
     let sntp = EspSntp::new_default().unwrap();
 
+    // ESP32 - двухядерный микроконтроллер.
+    // HTTP запросы будем в отдельном потоке который будет запущен на втором ядре
+    // Это необходимо что бы не занимать время первого ядра, которое используется для рендеринга.
+    // Начиная с вызова этой конфигурации, все потоки будут запускаться на втором ядре.
     ThreadSpawnConfiguration {
         name: Some(b"network-worker\0"),
         pin_to_core: Some(esp_idf_svc::hal::cpu::Core::Core1),
@@ -69,21 +83,34 @@ fn main() {
     .set()
     .unwrap();
 
+    // weather_info - переменная для синхронизации состояния между основным `main` и фоновым `network-worker` потоком 
+    // Для атомарного доступа к переменной используется RwLock (Read Write Lock). RwLock примитив синхронизации, 
+    // который блокирует чтение, пока идет запись и наоборот - блокирует запись пока идет чтение.
+    // Для создания нескольких ссылок использутеся Arc (Atomic Reference Counter) - умная ссылка с подсчетом ссылок
+    // Одна ссылка будет перемещана в поток `network-worket`, вторая использоваться в `main`
     let weather_info = std::sync::Arc::new(RwLock::new(ApplicationState::default()));
+    // Создание умной ссылки для потока `network-worket`
     let weather_info_write = weather_info.clone();
+    // Создание фонового потока для опроса метео-сервера
     let _thr1 = thread::Builder::new()
         .name("network-worker".to_string())
         .stack_size(32_000)
         .spawn(move || {
+            // Конфигураци HTTP клиента
             let mut conf = http::client::Configuration::default();
+            // Загрузка комплекта доверенных центров сертефикакации для работы SSL в HTTPS
             conf.crt_bundle_attach = Some(esp_idf_svc::sys::esp_crt_bundle_attach);
+            // установка таймаута на http запрос
             conf.timeout = Some(Duration::from_secs(30));
+            // URL для запроса данных о погоде, который можно сформировать на https://open-meteo.com/en/docs
             let api_url = "https://api.open-meteo.com/v1/forecast?\
             latitude=55.7522&longitude=37.6156&\
             current=temperature_2m&hourly=precipitation_probability&\
             daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&\
             timeformat=unixtime&timezone=Europe%2FMoscow&forecast_days=1";
+            // интервал с которым будет происходить опрос
             let request_interval = Duration::from_secs(10);
+            // буфер для ответа 
             let mut response_body_buffer = [0u8; 2048];
             loop {
                 let is_wifi_connected = wifi.is_connected().unwrap_or(false);
@@ -99,16 +126,21 @@ fn main() {
                             let esp_conn = EspHttpConnection::new(&conf)?;
                             let mut client = embedded_svc::http::client::Client::wrap(esp_conn);
                             let request = client.request(Method::Get, api_url, headers)?;
+                            // Отправляем запрос
                             let mut response = request.submit()?;
                             let bytes_read =
                                 try_read_full(&mut response, &mut response_body_buffer)
                                     .map_err(|e| e.0)?;
+                            // парсим json в нашу структуру данных
                             serde_json::from_slice::<OpenMeteoResponse>(
                                 &response_body_buffer[0..bytes_read],
                             )?
                         };
                         log::info!("Response from open meteo {:?}", &parsed_http_response);
 
+                        // JSON, который приходит с сервера возвращает массивы для текущей, макс и мин температуры
+                        // Для рендеринга температуры, необходимо одно значение, а не массив, который может быть потенциально пустым 
+                        // В этом блоке валидируем массивы и пишем результат парсинга в состояние приложения
                         if let Ok(response) = parsed_http_response {
                             let _: anyhow::Result<()> = try {
                                 info.temperature_cur = response.current.temperature_2m as i8;
@@ -134,33 +166,46 @@ fn main() {
                         }
                     }
                 }
+                // Запрос у FreeRTOS на приостановку потока (не spinlock)
                 FreeRtos::delay_ms(request_interval.as_millis() as u32);
             }
         });
     ThreadSpawnConfiguration::default().set().unwrap();
 
-    // SCREEN INIT
+    // Создание конфигурации для i2c шины
     let i2c_config = I2cConfig::new().baudrate(400u32.kHz().into());
 
+    // Отдельные переменные под GPIO, которые подключены к экрану
+    // В случае необходимости - поменять на актуальные 
     let screen_sda = peripheral.pins.gpio5;
     let screen_scl = peripheral.pins.gpio4;
 
+    // Создание i2c шины
     let i2c = I2cDriver::new(peripheral.i2c0, screen_sda, screen_scl, &i2c_config).unwrap();
 
+    // Создание I2C интерфейса для "абстрактного" экрана с адресом 0x3C на шине
     let interface = I2CDisplayInterface::new_custom_address(i2c, 0x3C);
 
+    // Создание I2C интерфейса для конкретного экрана на базе контроллера SSD1306 с разрешением 128x64
+    // Режим кадрового буффера - все рисование осуществляется в память МК.
+    // Командой flush() - кадровый буффер целиком отправляется в экран
     let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
 
+    // Инициализация дисплея по I2C
     display.init().unwrap();
 
+    // Установка яркости экрана в максимальное значение
     display.set_brightness(Brightness::BRIGHTEST).unwrap();
 
     display.flush().unwrap();
 
+    // Прямоугольник экрана, необходим для выравнивания притивов относительно экрана 
     let screen_area = Rectangle::new(Point::zero(), Size::new(128, 64));
 
+    // Парсинг TGA текстурного атласа 
     let sprite_sheet: Tga<'static, BinaryColor> = Tga::from_slice(SPRITE_SHEET_BYTES).unwrap();
+    // Нарезка текстурного атласа на "под-изображения" для последующего рисования
     let icon_rain =
         sprite_sheet.sub_image(&Rectangle::new(Point::new(0, 16 * 0), Size::new(16, 16)));
     let icon_snow =
@@ -177,17 +222,20 @@ fn main() {
         sprite_sheet.sub_image(&Rectangle::new(Point::new(0, 16 * 7), Size::new(16, 16)));
     let icon_graph_right =
         sprite_sheet.sub_image(&Rectangle::new(Point::new(16, 16 * 7), Size::new(16, 16)));
-
     let icon_diy = sprite_sheet.sub_image(&Rectangle::new(Point::new(16, 32), Size::new(52, 16)));
 
     let style1 = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
     let style2 = PrimitiveStyle::with_fill(BinaryColor::On);
 
+    // счетчик для анимаций и подсчета кадром
     let mut i: u16 = 0;
+    // Дельта между кадрами
     let mut dt = Duration::from_millis(1);
+    // Структура для состояния приложения
     let mut info = ApplicationState::default();
     let timezone = 3;
     loop {
+        // Что бы избежать RwLock Starvation читаем не каждый кадр, а каждый сотый 
         if i % 100 == 0 {
             if let Ok(new_info) = weather_info.try_read() {
                 info = new_info.clone();
@@ -200,9 +248,13 @@ fn main() {
 
         let start_time = Instant::now();
         i = i.overflowing_add(1).0;
+
+        // Очистка кадрового буффера от предыдущего кадра
         display.clear_buffer();
 
-        // Time and date
+        // ------------
+        // Время и дата
+        // -------------
         let time_str = format!(
             "{:0>2}:{:0>2}:{:0>2}",
             info.time.hour(),
@@ -244,7 +296,9 @@ fn main() {
         .draw(&mut display)
         .unwrap();
 
-        // Max, min and current temperature
+        // ------
+        // Минимальная, максимальная и текущая температура
+        // ------
         let weather_area = Rectangle::new(Point::zero(), Size::new(52, 12)).align_to(
             &screen_area,
             horizontal::Left,
@@ -289,7 +343,9 @@ fn main() {
             .draw(&mut display)
             .unwrap();
 
-        // Graph
+        // ---------
+        // График выпадения осадков
+        // ---------
         let bar_width = 3;
         let bar_margin = 1;
         let bar_height = 16;
@@ -327,7 +383,9 @@ fn main() {
             .draw(&mut display)
             .unwrap();
 
-        // Status
+        // ----------
+        // Статус - количество кадров в секунду
+        // ----------
         let angle_start = Angle::from_degrees(0.0 + (i as f32) * 6.0);
         let angle_sweep = Angle::from_degrees(100.0);
         let arc = Arc::new(Point::zero(), 16, angle_start, angle_sweep).align_to(
@@ -348,6 +406,9 @@ fn main() {
         .draw(&mut display)
         .unwrap();
 
+        // ----------
+        // Статус - WiFi
+        // ----------
         let icon_wifi = if info.is_wifi_connected {
             &icon_wifi_on
         } else {
@@ -358,19 +419,23 @@ fn main() {
             .draw(&mut display)
             .unwrap();
 
-        // DIY logo
+        // ----------
+        // Логотип DIY сообщества
+        // ----------
         Image::new(&icon_diy, Point::zero())
             .align_to(&screen_area, horizontal::Right, vertical::Center)
             .draw(&mut display)
             .unwrap();
 
+        // Отправка кадрового буффера по i2c в экран.
         display.flush().unwrap();
-
         let end_time = Instant::now();
-
         dt = end_time - start_time;
     }
 }
+
+/// Структура состояние приложения
+/// ApplicationState::default() - состояние для отладки UI рендеринга
 
 #[derive(Debug, Clone)]
 struct ApplicationState {
@@ -399,6 +464,8 @@ impl Default for ApplicationState {
         }
     }
 }
+
+/// Структуры для десериализации http ответов с OpenMeteo
 
 #[derive(Debug, serde::Deserialize)]
 struct OpenMeteoResponse {

@@ -60,6 +60,7 @@ Embedded Rust:
 - [Примеры использования ESP-IDF. Базовая перифирия (GPIO, I2C, ADC и т.д.)](https://github.com/esp-rs/esp-idf-hal/tree/master/examples)  
 - [Примеры использования ESP-IDF. Сервисы (WiFi, BT, HTTP и т.д.)](https://github.com/esp-rs/esp-idf-svc/tree/master/examples)  
 - [Серия статей Rust+ESP32](https://blog.theembeddedrustacean.com/series/esp32c3-embedded-rust-hal)
+- [Готовые библиотеки для периферии: Температурные датчики, акселерометры, дисплеи и т.д. ](https://github.com/rust-embedded/awesome-embedded-rust?tab=readme-ov-file#driver-crates)
 
 # Настройка окружения
 
@@ -71,6 +72,7 @@ Embedded Rust:
 ```
 https://rustup.rs
 ```
+Выбирать nightly
 
 Для Windows машин, необходимо выбрать опцию:
 ```
@@ -174,9 +176,9 @@ cargo install cargo-generate
 
 # Создание проекта
 
-Что бы  вручную не создавать и конфигурировать проект, можно воспользоваться утилитой `cargo-generate`. `cargo-generate` - создаст проект с нужными настройками на базе репозитория-шаблона
+Что бы вручную не создавать и конфигурировать проект, можно воспользоваться утилитой `cargo-generate`. `cargo-generate` - создаст проект с нужными настройками на базе репозитория-шаблона
 
-Переходим в директорию где вы планируте хранить проекты 
+Переходим в директорию где вы планируйте хранить проекты 
 Это может быть любая директория, но Windows машинах желательно путь выбирать наиболее короткий (например `C:\Projects`)
 
 ```shell
@@ -470,11 +472,11 @@ fn main() {
 
 ![ui_template](_assets/ui_template.png)
 
-- Состояние подключения Wi-Fi
-- Время и дата
-- Количество кадров в секунду
-- Текущая, максимальная и минимальная температура на сегодняшний день
-- Почасовый график вероятности осадков  
+1) Состояние подключения Wi-Fi
+2) Время и дата
+3) Количество кадров в секунду
+4) Текущая, максимальная и минимальная температура на сегодняшний день
+5) Почасовый график вероятности осадков  
 
 ## Состояние приложения
 
@@ -493,31 +495,9 @@ struct ApplicationState {
 }
 ```
 
-## Рисование статуса
+## Рисование времени (2)
 
-```rust
-let angle_start = Angle::from_degrees(0.0 + (i as f32) * 6.0);
-let angle_sweep = Angle::from_degrees(100.0);
-let arc = Arc::new(Point::zero(), 16, angle_start, angle_sweep).align_to(
-    &screen_area,
-    horizontal::Right,
-    vertical::Top,
-);
-arc.draw_styled(&style1, &mut display).unwrap();
-let _ = Text::with_text_style(
-    format!("{:02}", (1000.0f32 / dt.as_millis() as f32).round()).as_str(),
-    arc.center(),
-    MonoTextStyle::new(&FONT_4X6, BinaryColor::On),
-    TextStyleBuilder::new()
-        .alignment(Alignment::Center)
-        .baseline(Baseline::Middle)
-        .build(),
-)
-.draw(&mut display)
-.unwrap();
-```
-
-## Рисование времени и даты 
+![text](_assets/text.png)
 
 ```rust
 let time_str = format!(
@@ -536,29 +516,67 @@ let time_text = Text::with_text_style(
         .build(),
 )
 .align_to(&screen_area, horizontal::Center, vertical::Top);
-time_text.draw(&mut display).unwrap()
-let date_str = format!(
-    "{}/{}/{}",
-    info.time.day(),
-    info.time.month(),
-    info.time.year()
+time_text.draw(&mut display).unwrap();
+```
+
+## Рисование статуса (3)
+
+![arc](_assets/arc.png)
+
+```rust
+let angle_start = Angle::from_degrees(0.0 + (i as f32) * 6.0);
+let angle_sweep = Angle::from_degrees(100.0);
+let arc = Arc::new(Point::zero(), 16, angle_start, angle_sweep).align_to(
+    &screen_area,
+    horizontal::Right,
+    vertical::Top,
 );
+arc.draw_styled(&style1, &mut display).unwrap();
+
 let _ = Text::with_text_style(
-    date_str.as_str(),
-    Point::zero(),
+    format!("{:02}", (1000.0f32 / dt.as_millis() as f32).round()).as_str(),
+    arc.center(),
     MonoTextStyle::new(&FONT_4X6, BinaryColor::On),
     TextStyleBuilder::new()
         .alignment(Alignment::Center)
         .baseline(Baseline::Middle)
         .build(),
 )
-.align_to(
-    &time_text.bounding_box(),
-    horizontal::Center,
-    vertical::TopToBottom,
-)
 .draw(&mut display)
 .unwrap();
+```
+
+# Рисование графика
+
+![coord](_assets/coord.png)
+![rel_coord](_assets/draw_rel_coord.png)
+
+```rust
+let bar_width = 3;
+let bar_margin = 1;
+let bar_height = 16;
+let graph_area = Rectangle::new(
+    Point::zero(),
+    Size::new((bar_width + bar_margin) * 24 + 1, bar_height + 1),
+)
+.align_to(&screen_area, horizontal::Center, vertical::Bottom)
+.translate(Point::new(0, -3));
+for (ind, p) in info.rain_propability.iter().enumerate() {
+    let bar_x = (ind as u32) * (bar_width + bar_margin);
+    let bar_len = (bar_height as f32 * (1.0 - (*p as f32 / 100f32))) as i32;
+    let corner1 =
+        graph_area.top_left + Point::new((bar_x + bar_margin) as i32, bar_height as i32);
+    let corner2 = graph_area.top_left + Point::new((bar_x + bar_width) as i32, bar_len);
+    let bar = Rectangle::with_corners(corner1, corner2);
+    bar.draw_styled(&style2, &mut display).unwrap();
+
+    if info.time.hour() == ind as u32 {
+        let _ = Triangle::new(Point::new(-1, -2), Point::new(1, -2), Point::new(0, 1))
+            .align_to(&bar, horizontal::Center, vertical::BottomToTop)
+            .translate(Point::new(0, -1))
+            .draw_styled(&style2, &mut display);
+    }
+}
 ```
 
 # Полезные ссылки

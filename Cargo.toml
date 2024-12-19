@@ -49,3 +49,15 @@ embuild = "0.32.0"
 [[example]]  
 name = "test_screen"  
 path = "example/test_screen.rs"
+
+[[example]]  
+name = "test_tearing"  
+path = "example/test_tearing.rs"
+
+[[example]]  
+name = "firmware_v1"  
+path = "example/firmware_v1.rs"
+
+[[example]]  
+name = "firmware_v2"  
+path = "example/firmware_v2.rs"
